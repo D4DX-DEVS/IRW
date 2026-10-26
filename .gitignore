@@ -52,3 +52,7 @@ prisma/*.db-journal
 .wrangler/
 .claude/
 *.log
+
+# cloudflare
+.open-next/
+.dev.vars*

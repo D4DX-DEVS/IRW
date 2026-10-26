@@ -23,7 +23,7 @@ async function query(sql: string, params: unknown[] = []) {
 }
 
 async function main() {
-  if (!d1) throw new Error("Set CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN and D1_DATABASE_ID in .env");
+  if (!d1) throw new Error("Set CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_D1_TOKEN and D1_DATABASE_ID in .env");
   await query(`CREATE TABLE IF NOT EXISTS "_d1_migrations" ("name" TEXT NOT NULL PRIMARY KEY, "appliedAt" TEXT NOT NULL)`);
   const applied = new Set((await query(`SELECT "name" FROM "_d1_migrations"`)).map((r) => String(r.name)));
   const files = fs.readdirSync(DIR).filter((f) => f.endsWith(".sql")).sort();

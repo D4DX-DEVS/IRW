@@ -2,6 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { UPLOAD_ROOT } from "@/lib/storage";
 
+// Serves files uploaded without R2 (plain Node only); on Workers uploads live in R2 and this returns 404.
+
 const TYPES: Record<string, string> = {
   ".jpg": "image/jpeg",
   ".png": "image/png",

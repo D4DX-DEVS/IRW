@@ -23,7 +23,7 @@ Set in `.env` (when unset the app falls back to `DATABASE_URL` SQLite and the lo
 | Variable | Purpose |
 | --- | --- |
 | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account |
-| `CLOUDFLARE_API_TOKEN` | API token with **D1 Edit** |
+| `CLOUDFLARE_D1_TOKEN` | API token with **D1 Edit** (not `CLOUDFLARE_API_TOKEN`: wrangler reads `.env` and would use it instead of your `wrangler login`) |
 | `D1_DATABASE_ID` | D1 database id |
 | `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | R2 API token (Object Read & Write on the bucket) |
 | `R2_BUCKET_NAME` | bucket name |

@@ -1,14 +1,14 @@
 import { DeleteObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { R2_PUBLIC_URL, r2Url } from "./r2-url";
 
-// Cloudflare R2 through its S3-compatible API. Shared by the app and the migration scripts,
-// so it must not import "server-only".
+export { R2_PUBLIC_URL, r2KeyFromUrl, r2Url } from "./r2-url";
+
+// Cloudflare R2 through its S3-compatible API, for `next dev` and the migration scripts
+// (on Workers the app uses the R2 binding instead), so it must not import "server-only".
 const env = process.env;
 const BUCKET = env.R2_BUCKET || env.R2_BUCKET_NAME;
 const ACCOUNT = env.R2_ACCOUNT_ID || env.CLOUDFLARE_ACCOUNT_ID;
 const ENDPOINT = env.R2_ENDPOINT || (ACCOUNT ? `https://${ACCOUNT}.r2.cloudflarestorage.com` : "");
-
-/** Public base URL of the bucket: a custom CDN domain or its pub-….r2.dev address. */
-export const R2_PUBLIC_URL = (env.R2_PUBLIC_URL || env.R2_PUBLIC_ENDPOINT || "").replace(/\/+$/, "");
 
 export const r2Enabled = Boolean(env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY && BUCKET && ENDPOINT && R2_PUBLIC_URL);
 
@@ -21,14 +21,6 @@ function s3() {
     credentials: { accessKeyId: env.R2_ACCESS_KEY_ID!, secretAccessKey: env.R2_SECRET_ACCESS_KEY! },
   });
   return client;
-}
-
-export const r2Url = (key: string) => `${R2_PUBLIC_URL}/${key.split("/").map(encodeURIComponent).join("/")}`;
-
-/** Object key for a URL that lives in our bucket, otherwise null. */
-export function r2KeyFromUrl(url: string) {
-  if (!R2_PUBLIC_URL || !url.startsWith(R2_PUBLIC_URL + "/")) return null;
-  return decodeURIComponent(url.slice(R2_PUBLIC_URL.length + 1));
 }
 
 export async function r2Put(key: string, body: Uint8Array, contentType: string) {

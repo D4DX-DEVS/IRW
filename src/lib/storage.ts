@@ -1,10 +1,21 @@
 import "server-only";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import path from "node:path";
-import { r2Delete, r2Enabled, r2KeyFromUrl, r2Put } from "./r2";
+import { r2Delete, r2Enabled, r2Put } from "./r2";
+import { r2KeyFromUrl, r2Url } from "./r2-url";
 
 export const UPLOAD_ROOT = path.join(process.cwd(), "uploads");
+
+/** The R2 bucket binding on Workers, otherwise null. */
+function bucket() {
+  try {
+    return getCloudflareContext().env.BUCKET;
+  } catch {
+    return null;
+  }
+}
 
 const IMAGE_TYPES: Record<string, string> = {
   "image/jpeg": ".jpg",
@@ -34,8 +45,14 @@ export async function saveUpload(file: File, kind: UploadKind, folder: string) {
   if (!okMagic) throw new UploadError("File content does not match its type.");
 
   const name = `${randomUUID()}${ext}`;
+  const r2 = bucket();
+  if (r2) {
+    const key = `${folder}/${name}`;
+    await r2.put(key, bytes, { httpMetadata: { contentType: file.type, cacheControl: "public, max-age=31536000, immutable" } });
+    return { url: r2Url(key), size: bytes.length };
+  }
   if (r2Enabled) return { url: await r2Put(`${folder}/${name}`, bytes, file.type), size: bytes.length };
-  // No R2 credentials (local dev): keep files on disk, served by /files/*.
+  // No R2 at all (local dev without credentials): keep files on disk, served by /files/*.
   const dir = path.join(UPLOAD_ROOT, folder);
   await fs.mkdir(dir, { recursive: true });
   await fs.writeFile(path.join(dir, name), bytes);
@@ -44,8 +61,9 @@ export async function saveUpload(file: File, kind: UploadKind, folder: string) {
 
 export async function deleteUpload(url: string | null | undefined) {
   if (!url) return;
-  const key = r2Enabled ? r2KeyFromUrl(url) : null;
-  if (key) return r2Delete(key);
+  const r2 = bucket();
+  const key = r2 || r2Enabled ? r2KeyFromUrl(url) : null;
+  if (key) return r2 ? r2.delete(key) : r2Delete(key);
   if (!url.startsWith("/files/")) return;
   const rel = url.replace("/files/", "");
   const full = path.resolve(UPLOAD_ROOT, rel);

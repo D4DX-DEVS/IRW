@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "irw",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "irw" }],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "irw",
+      "database_id": "7ed9b9b3-6bbe-480f-8c08-1a168309bde4",
+      "remote": true
+    }
+  ],
+  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "irw", "remote": true }],
+  "vars": {
+    "R2_PUBLIC_URL": "https://pub-81b7ea5b64524ab286bb2e9774f027ca.r2.dev"
+  },
+  "observability": { "enabled": true }
+}
