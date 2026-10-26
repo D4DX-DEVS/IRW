@@ -30,7 +30,7 @@ export function TopPages({ pages }: { pages: Overview["topPages"] }) {
           {pages.map((p, i) => (
             <li key={p.path} className="flex flex-col gap-1.5">
               <div className="flex items-baseline justify-between gap-3 text-sm">
-                <a href={p.path} target="_blank" rel="noopener noreferrer" className="ml min-w-0 truncate font-semibold hover:text-red" title={p.path}>{pageName(p.path)}</a>
+                <a href={/^\/(?![\/\\])/.test(p.path) ? p.path : "#"} target="_blank" rel="noopener noreferrer" className="ml min-w-0 truncate font-semibold hover:text-red" title={p.path}>{pageName(p.path)}</a>
                 <span className="flex-none tabular-nums text-muted">{p.views.toLocaleString("en-IN")}</span>
               </div>
               <div className="h-2 rounded-full bg-bg2">
