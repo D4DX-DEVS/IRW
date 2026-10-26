@@ -1,0 +1,136 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         String   @default("EDITOR") // SUPER_ADMIN | EDITOR
+  createdAt    DateTime @default(now())
+}
+
+model Post {
+  id          String    @id @default(cuid())
+  type        String    @default("NEWS") // NEWS | EVENT | ACHIEVEMENT | REPORT
+  title       String
+  slug        String    @unique
+  excerpt     String    @default("")
+  body        String    @default("")
+  coverUrl    String?
+  tags        String    @default("")
+  status      String    @default("DRAFT") // DRAFT | PUBLISHED | SCHEDULED
+  featured    Boolean   @default(false)
+  publishedAt DateTime?
+  authorName  String    @default("Admin")
+  views       Int       @default(0)
+  deletedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Album {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  sort      Int      @default(0)
+  createdAt DateTime @default(now())
+  photos    Photo[]
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  albumId   String
+  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  url       String
+  caption   String   @default("")
+  sort      Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+model Video {
+  id          String   @id @default(cuid())
+  title       String
+  youtubeUrl  String
+  description String   @default("")
+  featured    Boolean  @default(false)
+  sort        Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model TeamMember {
+  id          String   @id @default(cuid())
+  name        String
+  designation String   @default("")
+  groupName   String   @default("GOVERNING")
+  photoUrl    String?
+  phone       String?
+  visible     Boolean  @default(true)
+  sort        Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model Publication {
+  id         String   @id @default(cuid())
+  title      String
+  category   String   @default("ANNUAL")
+  year       Int
+  fileUrl    String
+  sizeBytes  Int      @default(0)
+  showInMenu Boolean  @default(true)
+  createdAt  DateTime @default(now())
+}
+
+model Inquiry {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String   @default("")
+  topic     String   @default("GENERAL") // VOLUNTEER | DONATION | EMERGENCY | GENERAL
+  district  String   @default("")
+  message   String
+  status    String   @default("OPEN") // OPEN | RESOLVED
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  actor     String
+  verb      String
+  kind      String   @default("info")
+  createdAt DateTime @default(now())
+}
+
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  sessionId String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([sessionId])
+}
+
+model Banner {
+  id        String   @id @default(cuid())
+  title     String
+  subtitle  String   @default("")
+  imageUrl  String?
+  ctaLabel  String   @default("")
+  ctaHref   String   @default("")
+  active    Boolean  @default(true)
+  sort      Int      @default(0)
+  createdAt DateTime @default(now())
+}

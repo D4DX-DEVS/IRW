@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# IRW Kerala — website + admin (Next.js 16)
 
-## Getting Started
+Public site and admin panel for Ideal Relief Wing Kerala. Server-rendered pages, Prisma on Cloudflare D1 (local SQLite fallback), uploads on Cloudflare R2, Radix UI, Tailwind v4.
 
-First, run the development server:
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env     # set AUTH_SECRET
+npm run db:push          # create the database
+npm run db:seed          # admin user + content from the old site
+npm run dev              # http://localhost:3111
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Admin: http://localhost:3111/admin — seed login `admin@irwkerala.org` / `ChangeMe123!` (**change it**; set `SEED_ADMIN_PASSWORD` before seeding).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Production: `npm run build && npm start` (port 3111).
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Cloudflare D1 + R2
 
-## Learn More
+Set in `.env` (when unset the app falls back to `DATABASE_URL` SQLite and the local `uploads/` folder):
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | Purpose |
+| --- | --- |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account |
+| `CLOUDFLARE_API_TOKEN` | API token with **D1 Edit** |
+| `D1_DATABASE_ID` | D1 database id |
+| `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` | R2 API token (Object Read & Write on the bucket) |
+| `R2_BUCKET_NAME` | bucket name |
+| `R2_ENDPOINT` | `https://<account>.r2.cloudflarestorage.com` |
+| `R2_PUBLIC_URL` | public base URL of the bucket — custom CDN domain or `https://pub-….r2.dev` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run d1:migrate   # apply prisma/d1/*.sql to D1 (tracked in _d1_migrations)
+npm run wp:import    # copy logo, favicon, posts, photos, team, reports, banners from irwkerala.org into D1 + R2
+npm run db:seed      # admin user (sample content is skipped once the import has run)
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`wp:import` is idempotent: files already in R2 (`wp/<yyyy>/<mm>/…`) are skipped and rows are matched, not duplicated.
 
-## Deploy on Vercel
+Schema change: edit `prisma/schema.prisma`, then
+`npm run d1:diff -- -o prisma/d1/000N_<name>.sql`, copy `schema.prisma` over `prisma/d1/schema.snapshot.prisma`, and `npm run d1:migrate`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+D1 has no transactions over HTTP — Prisma runs `$transaction` batches as individual queries.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Structure
+
+- `src/app/(site)` public pages, same URLs as the old WordPress site (`/about-us`, `/articles`, `/news-events`, …)
+- `src/app/admin` sign-in, dashboard, content managers, server actions in `admin/actions`
+- `src/app/api/admin/live` server-sent events stream behind the live dashboard
+- `src/components/ui` Radix wrappers (Select, DropdownMenu, AlertDialog confirm, Drawer, Switch, Tabs, Toast)
+- `uploads/` local uploads when R2 is not configured, served through `/files/*`
+- `scripts/` D1 migration runner and the WordPress importer
+
+## Production notes
+
+- Article bodies are plain text (blank line = paragraph, `## ` heading, `> ` quote). No raw HTML is ever rendered.
+- Add a real rate limiter / WAF in front for the contact form and sign-in; the built-in limits are per-process.
