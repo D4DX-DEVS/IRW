@@ -6,7 +6,7 @@ import { PageHero } from "@/components/site/parts";
 import { getSettings } from "@/lib/settings";
 import { strParam } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Contact Us", description: "Contact Ideal Relief Wing Kerala — emergency lines, address and enquiry form." };
+export const metadata: Metadata = { title: "Contact Us", description: "Contact Ideal Relief Wing Kerala — emergency lines, address and enquiry form.", alternates: { canonical: "/contact-us" } };
 
 export default async function ContactPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const [s, sp] = await Promise.all([getSettings(), searchParams]);

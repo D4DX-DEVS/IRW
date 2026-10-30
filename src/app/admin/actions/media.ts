@@ -14,7 +14,7 @@ export async function createAlbum(input: unknown): Promise<ActionResult<{ id: st
   const count = await db.album.count();
   const album = await db.album.create({ data: { name: p.data.name, slug, sort: count } });
   await logActivity(me.name, `created album “${album.name}”`, "gallery");
-  refreshSite();
+  refreshSite("gallery");
   return { ok: true, data: { id: album.id }, message: "Album created" };
 }
 
@@ -23,7 +23,7 @@ export async function renameAlbum(id: string, input: unknown): Promise<ActionRes
   const p = albumSchema.safeParse(input);
   if (!p.success) return zodFail(p.error);
   await db.album.update({ where: { id }, data: { name: p.data.name } });
-  refreshSite();
+  refreshSite("gallery");
   return { ok: true, message: "Album renamed" };
 }
 
@@ -34,7 +34,7 @@ export async function deleteAlbum(id: string): Promise<ActionResult> {
   await Promise.all(album.photos.map((ph) => deleteUpload(ph.url)));
   await db.album.delete({ where: { id } });
   await logActivity(me.name, `deleted album “${album.name}”`, "gallery");
-  refreshSite();
+  refreshSite("gallery");
   return { ok: true };
 }
 
@@ -53,7 +53,7 @@ export async function uploadPhotos(albumId: string, formData: FormData): Promise
       await db.photo.create({ data: { albumId, url: up.url, caption: f.name.replace(/\.[^.]+$/, ""), sort: sort++ } });
     }
     await logActivity(me.name, `uploaded ${files.length} photo${files.length > 1 ? "s" : ""} to “${album.name}”`, "gallery");
-    refreshSite();
+    refreshSite("gallery");
     return { ok: true, data: { count: files.length }, message: `${files.length} photo${files.length > 1 ? "s" : ""} uploaded` };
   } catch (e) {
     return toFail(e);
@@ -66,7 +66,7 @@ export async function deletePhotos(ids: string[]): Promise<ActionResult> {
   await Promise.all(photos.map((p) => deleteUpload(p.url)));
   await db.photo.deleteMany({ where: { id: { in: ids } } });
   await logActivity(me.name, `deleted ${photos.length} photo${photos.length > 1 ? "s" : ""}`, "gallery");
-  refreshSite();
+  refreshSite("gallery");
   return { ok: true };
 }
 
@@ -78,7 +78,7 @@ export async function saveVideo(id: string | null, input: unknown): Promise<Acti
   if (id) await db.video.update({ where: { id }, data: p.data });
   else await db.video.create({ data: { ...p.data, sort: await db.video.count() } });
   await logActivity(me.name, `${id ? "updated" : "added"} video “${p.data.title}”`, "gallery");
-  refreshSite();
+  refreshSite("videos");
   return { ok: true, message: id ? "Video updated" : "Video added" };
 }
 
@@ -86,6 +86,6 @@ export async function deleteVideo(id: string): Promise<ActionResult> {
   const me = await guard();
   const v = await db.video.delete({ where: { id } });
   await logActivity(me.name, `deleted video “${v.title}”`, "gallery");
-  refreshSite();
+  refreshSite("videos");
   return { ok: true };
 }

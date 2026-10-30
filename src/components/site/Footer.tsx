@@ -22,18 +22,18 @@ export async function Footer() {
 
   return (
     <footer className="bg-navy-deep text-white">
-      <div className="mx-auto grid max-w-[1280px] gap-12 px-4 pb-10 pt-[72px] sm:px-8 md:grid-cols-[2fr_1fr_1.4fr]">
+      <div className="mx-auto grid max-w-[1280px] gap-8 px-4 pb-8 pt-12 sm:px-8 md:grid-cols-[2fr_1fr_1.4fr] md:gap-12 md:pb-10 md:pt-[72px]">
         <div className="flex flex-col gap-4">
           {s.logoWhiteUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={s.logoWhiteUrl} alt={s.orgName} width={592} height={148} className="h-14 w-auto self-start" />
+            <img src={s.logoWhiteUrl} alt={s.orgName} width={592} height={148} className="h-11 w-auto self-start md:h-14" />
           ) : (
             <div className="flex items-center gap-3">
               <span className="flex h-[46px] w-[46px] items-center justify-center rounded-full border-[3px] border-[#ff4d5e] text-[13px] font-black">IRW</span>
               <span className="text-xl font-extrabold">{s.orgName}</span>
             </div>
           )}
-          <p className="max-w-md text-base leading-7 text-[#dbe4f2]">{s.about}</p>
+          <p className="line-clamp-4 max-w-md text-[15px] leading-6 text-[#dbe4f2] md:line-clamp-none md:text-base md:leading-7">{s.about}</p>
           <div className="flex gap-2.5">
             {social.map((x) => (
               <a key={x.label} href={x.href} aria-label={x.label} target="_blank" rel="noopener" className="flex h-11 w-11 items-center justify-center rounded-[10px] bg-white/10 transition-[background-color,transform] duration-200 hover:-translate-y-0.5 hover:bg-white/20 active:scale-95">
@@ -42,31 +42,32 @@ export async function Footer() {
             ))}
           </div>
         </div>
-        <div className="flex flex-col gap-3">
-          <h2 className="text-lg font-bold text-white">Explore</h2>
+        {/* Two columns of links on a phone keep the footer short; one column from md up. */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-2.5 md:flex md:flex-col md:gap-3">
+          <h2 className="col-span-2 text-lg font-bold text-white">Explore</h2>
           {EXPLORE.map(([h, l]) => (
-            <Link key={h} href={h} className="self-start text-base text-[#dbe4f2] transition-colors duration-200 hover:text-white">
+            <Link key={h} href={h} className="self-start text-[15px] text-[#dbe4f2] transition-colors duration-200 hover:text-white md:text-base">
               <span className="link-draw">{l}</span>
             </Link>
           ))}
         </div>
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2.5 text-[15px] md:gap-3 md:text-base">
           <h2 className="text-lg font-bold text-white">Contact</h2>
-          <address className="text-base not-italic leading-7 text-[#dbe4f2]">{s.address}</address>
+          <address className="not-italic leading-6 text-[#dbe4f2] md:leading-7">{s.address}</address>
           {[s.phone1, s.phone2, s.phone3].filter(Boolean).map((p) => (
-            <a key={p} href={tel(p)} className="self-start text-base text-[#dbe4f2] transition-colors duration-200 hover:text-white">
+            <a key={p} href={tel(p)} className="self-start text-[#dbe4f2] transition-colors duration-200 hover:text-white">
               <span className="link-draw">(+91) {p.replace(/^\+91\s?/, "")}</span>
             </a>
           ))}
-          <a href={`mailto:${s.email}`} className="self-start text-base text-[#dbe4f2] transition-colors duration-200 hover:text-white">
+          <a href={`mailto:${s.email}`} className="self-start text-[#dbe4f2] transition-colors duration-200 hover:text-white">
             <span className="link-draw">{s.email}</span>
           </a>
         </div>
       </div>
       <div className="bg-black/20">
-        <div className="mx-auto flex max-w-[1280px] flex-wrap justify-between gap-3 px-4 py-5 text-sm text-[#c9d2e0] sm:px-8">
+        <div className="mx-auto flex max-w-[1280px] flex-wrap justify-between gap-3 px-4 py-4 text-[13px] text-[#c9d2e0] sm:px-8 md:py-5 md:text-sm">
           <span>© {new Date().getFullYear()} IRW Kerala. All rights reserved.</span>
-          <span>Rescue · Relief · Rehabilitation · Reconstruction</span>
+          <span className="hidden md:inline">Rescue · Relief · Rehabilitation · Reconstruction</span>
         </div>
       </div>
     </footer>

@@ -1,3 +1,4 @@
+import { cached, TAG } from "./cache";
 import { db } from "./db";
 
 export const DEFAULT_SETTINGS = {
@@ -21,9 +22,10 @@ export const DEFAULT_SETTINGS = {
 };
 export type Settings = typeof DEFAULT_SETTINGS;
 
-export async function getSettings(): Promise<Settings> {
+// Read by the header and footer of every page, so it is cached; saving settings refreshes the tag.
+export const getSettings = cached("settings", [TAG.settings], async (): Promise<Settings> => {
   const rows = await db.setting.findMany();
   const out: Record<string, string> = { ...DEFAULT_SETTINGS };
   for (const r of rows) out[r.key] = r.value;
   return out as Settings;
-}
+});

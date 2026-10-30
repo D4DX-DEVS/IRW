@@ -3,6 +3,7 @@
 // skipped and rows are matched by slug / name / URL instead of being duplicated.
 //
 //   npm run wp:import
+//   npm run wp:import -- team        (only the named sections)
 import { createClient } from "../src/lib/db";
 import { r2Enabled, r2Exists, r2Put, r2Url } from "../src/lib/r2";
 import { slugify } from "../src/lib/utils";
@@ -48,16 +49,23 @@ const ACHIEVEMENTS = [
   },
 ];
 
-// Old /our-team page, in page order.
+// Old /our-team page, in page order. Its Leaders grid loads over AJAX, so it is listed here by hand.
 const TEAM = [
-  ["Basheer Sharqi", "2025/08/WhatsApp-Image-2025-08-16-at-11.15.57_6a967d9a.jpg"],
-  ["Shameer V.I", "2025/08/WhatsApp-Image-2025-08-16-at-11.15.58_a7bc4275.jpg"],
-  ["Asif Ali P.K", "2025/08/WhatsApp-Image-2025-08-16-at-11.15.58_15fa53c4.jpg"],
-  ["Sharafudheen P", "2025/08/WhatsApp-Image-2025-08-16-at-11.15.58_97a7b772.jpg"],
-  ["Muhammed Ashraf P", "2025/08/WhatsApp-Image-2025-08-16-at-11.15.59_741124aa.jpg"],
-  ["Shajeer K", "2025/08/WhatsApp-Image-2025-08-16-at-11.15.59_dd9c1a1d.jpg"],
-  ["Shajeel Bin Hassan", "2025/08/WhatsApp-Image-2025-08-16-at-11.15.59_aa489ce2.jpg"],
-  ["Fazuludheen M", "2025/08/WhatsApp-Image-2025-08-16-at-11.16.00_8a13cf25.jpg"],
+  ["LEADERS", "Shihabudheen T.K", "General Convenor", "2025/08/iyit4y.jpg"],
+  ["LEADERS", "M.E Nowfal", "General Secretary", "2025/08/WhatsApp-Image-2025-08-16-at-10.19.18_d2cb5f27.jpg"],
+  ["LEADERS", "Shabeer Ahammed", "Assistant Convener", "2025/08/WhatsApp-Image-2025-08-16-at-10.19.30_a1e1b7f7.jpg"],
+  ["LEADERS", "Faizal P", "Finance Secretary", "2025/08/WhatsApp-Image-2025-08-16-at-10.20.09_eccf89f8.jpg"],
+  ["LEADERS", "Mohammed Thaha M", "Media", "2025/08/WhatsApp-Image-2025-08-16-at-10.20.14_f53355da.jpg"],
+  ["LEADERS", "Hamsa Kunju N.I", "Public Relations", "2025/08/WhatsApp-Image-2025-08-16-at-10.20.19_e0062bdf.jpg"],
+  ["LEADERS", "Illias C.N", "S.R.W", "2025/08/WhatsApp-Image-2025-08-16-at-10.20.28_b11c8cc0.jpg"],
+  ["GOVERNING", "Basheer Sharqi", "Governing Body Member", "2025/08/WhatsApp-Image-2025-08-16-at-11.15.57_6a967d9a.jpg"],
+  ["GOVERNING", "Shameer V.I", "Governing Body Member", "2025/08/WhatsApp-Image-2025-08-16-at-11.15.58_a7bc4275.jpg"],
+  ["GOVERNING", "Asif Ali P.K", "Governing Body Member", "2025/08/WhatsApp-Image-2025-08-16-at-11.15.58_15fa53c4.jpg"],
+  ["GOVERNING", "Sharafudheen P", "Governing Body Member", "2025/08/WhatsApp-Image-2025-08-16-at-11.15.58_97a7b772.jpg"],
+  ["GOVERNING", "Muhammed Ashraf P", "Governing Body Member", "2025/08/WhatsApp-Image-2025-08-16-at-11.15.59_741124aa.jpg"],
+  ["GOVERNING", "Shajeer K", "Governing Body Member", "2025/08/WhatsApp-Image-2025-08-16-at-11.15.59_dd9c1a1d.jpg"],
+  ["GOVERNING", "Shajeel Bin Hassan", "Governing Body Member", "2025/08/WhatsApp-Image-2025-08-16-at-11.15.59_aa489ce2.jpg"],
+  ["GOVERNING", "Fazuludheen M", "Governing Body Member", "2025/08/WhatsApp-Image-2025-08-16-at-11.16.00_8a13cf25.jpg"],
 ] as const;
 
 const PUBLICATIONS = [
@@ -275,11 +283,12 @@ async function importGallery() {
 
 async function importTeam() {
   console.log("Team");
-  for (const [i, [name, photo]] of TEAM.entries()) {
+  for (const [groupName, name, designation, photo] of TEAM) {
     const photoUrl = await mirror(photo);
+    const sort = TEAM.filter((t) => t[0] === groupName).findIndex((t) => t[1] === name);
     const found = await db.teamMember.findFirst({ where: { name } });
     if (found) await db.teamMember.update({ where: { id: found.id }, data: { photoUrl } });
-    else await db.teamMember.create({ data: { name, designation: "Governing Body Member", groupName: "GOVERNING", photoUrl, sort: i } });
+    else await db.teamMember.create({ data: { name, designation, groupName, photoUrl, sort } });
   }
 }
 
@@ -306,6 +315,17 @@ async function importBanners() {
 
 async function main() {
   if (!r2Enabled) throw new Error("Set the R2_* variables in .env before importing — files are copied to the R2 bucket.");
+  // `npm run wp:import -- team` imports only the named sections and leaves the rest untouched.
+  const only = process.argv.slice(2);
+  if (only.length) {
+    const sections: Record<string, () => Promise<void>> = { brand: importBrand, achievements: importAchievements, gallery: importGallery, team: importTeam, publications: importPublications, banners: importBanners };
+    for (const s of only) {
+      if (!sections[s]) throw new Error(`Unknown section "${s}". Use: ${Object.keys(sections).join(", ")}`);
+      await sections[s]();
+    }
+    console.log(`Done. ${uploadedCount} new file(s) uploaded to R2.`);
+    return;
+  }
   console.log("Reading the WordPress media library…");
   const all = await getAll<WpMedia>("media", "id,post,source_url,mime_type,title,alt_text,date_gmt");
   const media = new Map(all.map((m) => [m.id, m]));

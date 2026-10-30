@@ -1,6 +1,11 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { PrismaD1 } from "@prisma/adapter-d1";
 import { PrismaClient } from "@prisma/client";
+// The bundler picks the native-engine build of "@prisma/client" (its "node" export condition wins),
+// which cannot load on Workers. The Worker uses the WASM build instead; it ships only as CommonJS
+// (the "import" target of "@prisma/client/wasm" does not exist), hence require.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { PrismaClient: WasmPrismaClient } = require("@prisma/client/wasm") as typeof import("@prisma/client/wasm");
 
 /** Cloudflare D1 HTTP API credentials from .env, or null when D1 is not configured. */
 export function d1Config() {
@@ -36,7 +41,7 @@ function client(): PrismaClient {
   if (cf) {
     let c = perRequest.get(cf.ctx);
     if (!c) {
-      c = new PrismaClient({ adapter: new PrismaD1(cf.env.DB) });
+      c = new WasmPrismaClient({ adapter: new PrismaD1(cf.env.DB) }) as unknown as PrismaClient;
       perRequest.set(cf.ctx, c);
     }
     return c;

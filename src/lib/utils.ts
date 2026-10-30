@@ -43,6 +43,7 @@ export const POST_TYPES = {
 } as const;
 
 export const TEAM_GROUPS = {
+  LEADERS: "Leaders",
   GOVERNING: "Governing body",
   DISTRICT: "District coordinators",
   MEDICAL: "Medical wing",

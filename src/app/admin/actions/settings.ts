@@ -13,6 +13,6 @@ export async function saveSettings(input: unknown): Promise<ActionResult> {
     ),
   );
   await logActivity(me.name, "updated site settings", "settings");
-  refreshSite();
+  refreshSite("settings");
   return { ok: true, message: "Settings saved" };
 }

@@ -23,7 +23,7 @@ export async function saveMember(formData: FormData): Promise<ActionResult> {
     if (id) await db.teamMember.update({ where: { id }, data });
     else await db.teamMember.create({ data: { ...data, sort: await db.teamMember.count({ where: { groupName: data.groupName } }) } });
     await logActivity(me.name, `${id ? "updated" : "added"} team member ${data.name}`, "team");
-    refreshSite();
+    refreshSite("team");
     return { ok: true, message: id ? "Member updated" : "Member added" };
   } catch (e) {
     return toFail(e);
@@ -37,20 +37,20 @@ export async function deleteMember(id: string): Promise<ActionResult> {
   await deleteUpload(m.photoUrl);
   await db.teamMember.delete({ where: { id } });
   await logActivity(me.name, `removed team member ${m.name}`, "team");
-  refreshSite();
+  refreshSite("team");
   return { ok: true };
 }
 
 export async function setMemberVisible(id: string, visible: boolean): Promise<ActionResult> {
   await guard();
   await db.teamMember.update({ where: { id }, data: { visible } });
-  refreshSite();
+  refreshSite("team");
   return { ok: true };
 }
 
 export async function reorderMembers(ids: string[]): Promise<ActionResult> {
   await guard();
   await db.$transaction(ids.map((id, i) => db.teamMember.update({ where: { id }, data: { sort: i } })));
-  refreshSite();
+  refreshSite("team");
   return { ok: true };
 }

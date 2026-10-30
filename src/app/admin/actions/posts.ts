@@ -67,7 +67,7 @@ export async function savePost(formData: FormData): Promise<ActionResult<{ id: s
       : await db.post.create({ data: { ...data, authorName: me.name } });
 
     await logActivity(me.name, `${intent === "publish" ? "published" : "saved a draft of"} “${post.title.slice(0, 48)}”`, "post");
-    refreshSite();
+    refreshSite("posts");
     return { ok: true, data: { id: post.id }, message: intent === "publish" ? "Post published" : "Draft saved" };
   } catch (e) {
     return toFail(e);
@@ -79,7 +79,7 @@ export async function trashPosts(ids: string[]): Promise<ActionResult> {
   if (!ids.length) return fail("Nothing selected.");
   await db.post.updateMany({ where: { id: { in: ids } }, data: { deletedAt: new Date() } });
   await logActivity(me.name, `moved ${ids.length} post${ids.length > 1 ? "s" : ""} to Trash`, "post");
-  refreshSite();
+  refreshSite("posts");
   return { ok: true };
 }
 
@@ -87,7 +87,7 @@ export async function restorePosts(ids: string[]): Promise<ActionResult> {
   const me = await guard();
   await db.post.updateMany({ where: { id: { in: ids } }, data: { deletedAt: null } });
   await logActivity(me.name, `restored ${ids.length} post${ids.length > 1 ? "s" : ""}`, "post");
-  refreshSite();
+  refreshSite("posts");
   return { ok: true };
 }
 
@@ -98,7 +98,7 @@ export async function setPostsStatus(ids: string[], status: "PUBLISHED" | "DRAFT
     data: status === "PUBLISHED" ? { status, publishedAt: new Date() } : { status },
   });
   await logActivity(me.name, `${status === "PUBLISHED" ? "published" : "unpublished"} ${ids.length} post${ids.length > 1 ? "s" : ""}`, "post");
-  refreshSite();
+  refreshSite("posts");
   return { ok: true };
 }
 
@@ -111,6 +111,6 @@ export async function duplicatePost(id: string): Promise<ActionResult> {
     data: { type: p.type, title: `${p.title} (copy)`, slug, excerpt: p.excerpt, body: p.body, tags: p.tags, coverUrl: p.coverUrl, authorName: me.name },
   });
   await logActivity(me.name, `duplicated “${p.title.slice(0, 40)}”`, "post");
-  refreshSite();
+  refreshSite("posts");
   return { ok: true };
 }

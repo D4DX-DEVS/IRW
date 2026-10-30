@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { PageHero, Photo, stagger } from "@/components/site/parts";
+import { cached, TAG } from "@/lib/cache";
 import { db } from "@/lib/db";
 
-export const metadata: Metadata = { title: "About Us", description: "Vision, mission and history of Ideal Relief Wing Kerala, a registered NGO established in 1992." };
+export const metadata: Metadata = { title: "About Us", description: "Vision, mission and history of Ideal Relief Wing Kerala, a registered NGO established in 1992.", alternates: { canonical: "/about-us" } };
 
 const VALUES = ["Teamwork", "Value addition", "Integrity", "Accountability", "Transparency"];
 const DEPLOYS = [
@@ -14,8 +15,12 @@ const DEPLOYS = [
   ["2015", "Earthquake", "Nepal"],
 ];
 
+export const revalidate = 3600;
+
+const getPhotos = cached("about-photos", [TAG.gallery], () => db.photo.findMany({ orderBy: [{ album: { sort: "asc" } }, { sort: "asc" }], skip: 5, take: 4 }));
+
 export default async function AboutPage() {
-  const photos = await db.photo.findMany({ orderBy: [{ album: { sort: "asc" } }, { sort: "asc" }], skip: 5, take: 4 });
+  const photos = await getPhotos();
   const [hero, ...more] = photos;
 
   return (

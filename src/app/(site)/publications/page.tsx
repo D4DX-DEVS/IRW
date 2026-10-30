@@ -2,20 +2,29 @@ import type { Metadata } from "next";
 import { Download } from "lucide-react";
 import Link from "next/link";
 import { PageHero, stagger } from "@/components/site/parts";
+import { cached, TAG } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { fmtBytes, strParam } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Publications", description: "Annual reports and rescue reports published by IRW Kerala." };
+export const metadata: Metadata = { title: "Publications", description: "Annual reports and rescue reports published by IRW Kerala.", alternates: { canonical: "/publications" } };
 
 const CATS = { ANNUAL: "Annual reports", RESCUE: "Rescue reports", OTHER: "Other" } as const;
 const BG = ["bg-navy", "bg-red-dark", "bg-royal", "bg-[#143a3a]"];
 
+// One cache entry per category ("" for all).
+const getDocs = cached("publications", [TAG.publications], async (category: string) => {
+  const [groups, docs] = await Promise.all([
+    db.publication.groupBy({ by: ["category"] }),
+    db.publication.findMany({ where: category ? { category } : {}, orderBy: [{ year: "desc" }, { createdAt: "desc" }] }),
+  ]);
+  return { filled: groups.map((g) => g.category), docs };
+});
+
 export default async function PublicationsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const cat = strParam(sp.category);
-  const filled = new Set((await db.publication.groupBy({ by: ["category"] })).map((g) => g.category));
-  const cats = Object.entries(CATS).filter(([k]) => filled.has(k));
-  const docs = await db.publication.findMany({ where: cat in CATS ? { category: cat } : {}, orderBy: [{ year: "desc" }, { createdAt: "desc" }] });
+  const { filled, docs } = await getDocs(cat in CATS ? cat : "");
+  const cats = Object.entries(CATS).filter(([k]) => filled.includes(k));
   const chip = (on: boolean) => `inline-flex min-h-11 items-center rounded-full px-5 text-sm font-semibold transition-[background-color,color,transform] duration-200 active:scale-95 ${on ? "bg-navy text-white" : "bg-white hover:bg-tint"}`;
 
   return (

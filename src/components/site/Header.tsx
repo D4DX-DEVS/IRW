@@ -11,7 +11,7 @@ export async function Header() {
   return (
     <header className="site-header sticky top-0 z-40 bg-white">
       <div className="bg-navy text-[13px] text-[#c9d2e0]">
-        <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-x-6 gap-y-1 px-4 py-2 sm:px-8">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-x-6 gap-y-1 px-4 py-2 sm:px-8 lg:px-10">
           <span>
             For rapid enquiries, call{" "}
             <a href={`tel:${s.phone1.replace(/\s/g, "")}`} className="font-bold text-white">
@@ -24,11 +24,11 @@ export async function Header() {
           </span>
         </div>
       </div>
-      <div className="mx-auto flex max-w-[1280px] items-center justify-between gap-4 px-4 py-3 sm:px-8">
+      <div className="mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 py-3 sm:px-8 lg:px-10">
         <Link href="/" className="brand flex items-center gap-3">
           {s.logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={s.logoUrl} alt={s.orgName} width={604} height={173} className="h-[52px] w-auto sm:h-[60px]" />
+            <img src={s.logoUrl} alt={s.orgName} width={604} height={173} className="h-[60px] w-auto sm:h-[80px]" />
           ) : (
             <>
               <span className="flex h-[52px] w-[52px] items-center justify-center rounded-full border-[3px] border-red bg-white text-sm font-black text-royal">IRW</span>

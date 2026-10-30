@@ -4,7 +4,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { ChevronDown, Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export interface NavPub {
   id: string;
@@ -25,17 +25,30 @@ function useActive() {
 }
 
 const linkCls = (on: boolean) =>
-  `inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 text-[15px] font-semibold transition-colors duration-200 hover:text-red ${on ? "text-red" : "text-navy"}`;
+  `inline-flex min-h-11 items-center gap-1 whitespace-nowrap rounded-lg px-2.5 text-sm font-semibold transition-colors duration-200 hover:text-red ${on ? "text-red" : "text-navy"}`;
 
 function Dropdown({ label, on, items }: { label: string; on: boolean; items: { label: string; href: string; external?: boolean; hint?: string }[] }) {
+  const [open, setOpen] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // Open on hover; short close delay lets the pointer cross the gap into the menu
+  const show = () => {
+    clearTimeout(timer.current);
+    setOpen(true);
+  };
+  const hide = () => {
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setOpen(false), 150);
+  };
+  useEffect(() => () => clearTimeout(timer.current), []);
+
   return (
-    <DM.Root>
-      <DM.Trigger className={`${linkCls(on)} group data-[state=open]:text-red`}>
+    <DM.Root open={open} onOpenChange={setOpen} modal={false}>
+      <DM.Trigger onPointerEnter={show} onPointerLeave={hide} className={`${linkCls(on)} group data-[state=open]:text-red`}>
         <span className="link-draw">{label}</span>
         <ChevronDown size={14} className="transition-transform duration-300 group-data-[state=open]:rotate-180" />
       </DM.Trigger>
       <DM.Portal>
-        <DM.Content sideOffset={6} align="start" className="anim-pop z-[100] min-w-64 rounded-xl bg-white p-1.5 shadow-pop">
+        <DM.Content onPointerEnter={show} onPointerLeave={hide} sideOffset={6} align="start" className="anim-pop z-[100] min-w-64 rounded-xl bg-white p-1.5 shadow-pop">
           {items.length === 0 && <div className="px-3 py-2 text-sm text-muted">Nothing here yet</div>}
           {items.map((i) => (
             <DM.Item key={i.href + i.label} asChild>
@@ -66,7 +79,7 @@ export function HeaderNav({ pubs }: { pubs: NavPub[] }) {
 
   return (
     <>
-      <nav aria-label="Main" className="hidden items-center gap-0.5 xl:flex">
+      <nav aria-label="Main" className="ml-auto hidden items-center gap-0 xl:flex">
         {LINKS.map((l) => (
           <Link key={l.href} href={l.href} aria-current={isActive(l.href) ? "page" : undefined} className={linkCls(isActive(l.href))}>
             <span className="link-draw">{l.label}</span>
@@ -80,7 +93,7 @@ export function HeaderNav({ pubs }: { pubs: NavPub[] }) {
         <Link href="/contact-us" aria-current={isActive("/contact-us") ? "page" : undefined} className={linkCls(isActive("/contact-us"))}>
           <span className="link-draw">Contact</span>
         </Link>
-        <Link href="/contact-us" className="btn btn-red ml-2.5">
+        <Link href="/contact-us" className="btn btn-red ml-3">
           Support Us
         </Link>
       </nav>

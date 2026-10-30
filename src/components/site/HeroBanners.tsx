@@ -19,10 +19,9 @@ export function HeroBanners({ banners }: { banners: HeroBanner[] }) {
 
   return (
     <section aria-roledescription="carousel" aria-label="Featured banners" className="relative isolate overflow-hidden bg-navy text-white" {...hold}>
-      <div className="relative min-h-[clamp(420px,62vh,640px)]">
+      {/* Box follows the 2048×900 banner artwork so nothing is cropped; capped so the intro still shows on the first screen. */}
+      <div className="relative aspect-[2048/900] max-h-[70vh] min-h-[220px] w-full">
         {banners.map((b, idx) => {
-          // One visible h1 per page: the slide on screen carries it.
-          const Title = idx === i ? "h1" : "h2";
           return (
             <div
               key={b.id}
@@ -33,19 +32,24 @@ export function HeroBanners({ banners }: { banners: HeroBanner[] }) {
               className={`absolute inset-0 overflow-clip transition-[opacity,visibility] duration-700 ${idx === i ? "visible opacity-100" : "pointer-events-none invisible opacity-0"}`}
             >
               {b.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={idx === i ? `img-on-${i}` : "img-off"}
-                  src={b.imageUrl}
-                  alt=""
-                  className={`absolute inset-0 h-full w-full object-cover ${idx === i ? "kenburns" : ""}`}
-                  {...(idx === 0 ? { fetchPriority: "high" as const } : { loading: "lazy" as const })}
-                />
+                <>
+                  {/* Blurred copy fills any letterbox when the cap or a different ratio leaves space. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={b.imageUrl} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-2xl" loading="lazy" />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    key={idx === i ? `img-on-${i}` : "img-off"}
+                    src={b.imageUrl}
+                    alt=""
+                    className={`absolute inset-0 h-full w-full object-contain ${idx === i ? "anim-fade" : ""}`}
+                    {...(idx === 0 ? { fetchPriority: "high" as const } : { loading: "lazy" as const })}
+                  />
+                </>
               ) : (
                 <div className="ph absolute inset-0" />
               )}
-              {/* Image-only banner; the title stays for screen readers and SEO. */}
-              {b.title && <Title className="sr-only">{b.title}</Title>}
+              {/* Image-only banner; the title stays for screen readers. The page's h1 sits in the intro below. */}
+              {b.title && <h2 className="sr-only">{b.title}</h2>}
             </div>
           );
         })}

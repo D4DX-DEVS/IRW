@@ -28,7 +28,7 @@ export async function saveBanner(formData: FormData): Promise<ActionResult> {
     if (id) await db.banner.update({ where: { id }, data });
     else await db.banner.create({ data: { ...data, sort: await db.banner.count() } });
     await logActivity(me.name, `${id ? "updated" : "added"} banner “${data.title.slice(0, 40)}”`, "post");
-    refreshSite();
+    refreshSite("banners");
     return { ok: true, message: id ? "Banner updated" : "Banner added" };
   } catch (e) {
     return toFail(e);
@@ -38,14 +38,14 @@ export async function saveBanner(formData: FormData): Promise<ActionResult> {
 export async function setBannerActive(id: string, active: boolean): Promise<ActionResult> {
   await guard();
   await db.banner.update({ where: { id }, data: { active } });
-  refreshSite();
+  refreshSite("banners");
   return { ok: true };
 }
 
 export async function reorderBanners(ids: string[]): Promise<ActionResult> {
   await guard();
   await db.$transaction(ids.map((id, i) => db.banner.update({ where: { id }, data: { sort: i } })));
-  refreshSite();
+  refreshSite("banners");
   return { ok: true };
 }
 
@@ -56,6 +56,6 @@ export async function deleteBanner(id: string): Promise<ActionResult> {
   await deleteUpload(b.imageUrl);
   await db.banner.delete({ where: { id } });
   await logActivity(me.name, `deleted banner “${b.title.slice(0, 40)}”`, "post");
-  refreshSite();
+  refreshSite("banners");
   return { ok: true };
 }

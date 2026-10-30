@@ -27,7 +27,7 @@ export async function savePublication(formData: FormData): Promise<ActionResult>
     if (id) await db.publication.update({ where: { id }, data });
     else await db.publication.create({ data });
     await logActivity(me.name, `${id ? "updated" : "uploaded"} publication “${data.title}”`, "publication");
-    refreshSite();
+    refreshSite("publications");
     return { ok: true, message: id ? "Publication updated" : "Publication uploaded" };
   } catch (e) {
     return toFail(e);
@@ -41,6 +41,6 @@ export async function deletePublication(id: string): Promise<ActionResult> {
   await deleteUpload(p.fileUrl);
   await db.publication.delete({ where: { id } });
   await logActivity(me.name, `deleted publication “${p.title}”`, "publication");
-  refreshSite();
+  refreshSite("publications");
   return { ok: true };
 }

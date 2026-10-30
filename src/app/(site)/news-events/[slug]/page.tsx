@@ -2,33 +2,66 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Body, Photo, stagger } from "@/components/site/parts";
+import { cached, TAG } from "@/lib/cache";
 import { db } from "@/lib/db";
-import { livePostWhere, stripExcerpt, tagList } from "@/lib/queries";
+import { getLiveSlugs, livePostWhere, stripExcerpt, tagList } from "@/lib/queries";
+import { articleLd, breadcrumbLd, jsonLd } from "@/lib/seo";
 import { fmtDate, POST_TYPES } from "@/lib/utils";
 
 type Props = { params: Promise<{ slug: string }> };
 
+// Each post is rendered on its first visit and then served from the cache until posts change.
+// Views are counted by the page tracker (/api/track), not here, so the cached page stays valid.
+export const revalidate = 3600;
+export function generateStaticParams() {
+  return [];
+}
+
+const getPost = cached("post", [TAG.posts], async (slug: string) => {
+  const post = await db.post.findFirst({ where: livePostWhere({ slug }) });
+  if (!post) return null;
+  const related = await db.post.findMany({ where: livePostWhere({ type: post.type, NOT: { id: post.id } }), orderBy: { publishedAt: "desc" }, take: 3 });
+  return { post, related };
+}, 600);
+
 async function load(slug: string) {
-  return db.post.findFirst({ where: livePostWhere({ slug: decodeURIComponent(slug) }) });
+  let s = slug;
+  try {
+    s = decodeURIComponent(slug);
+  } catch {
+    return null;
+  }
+  // Unknown slugs never reach the cache, so random URLs cannot fill it.
+  return (await getLiveSlugs()).some((p) => p.slug === s) ? getPost(s) : null;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const p = await load((await params).slug);
+  const p = (await load((await params).slug))?.post;
   if (!p) return { title: "Not found" };
   const description = stripExcerpt(p.excerpt || p.body, 160);
-  return { title: p.title, description, openGraph: { title: p.title, description, images: p.coverUrl ? [p.coverUrl] : undefined, type: "article" } };
+  return {
+    title: p.title,
+    description,
+    alternates: { canonical: `/news-events/${p.slug}` },
+    openGraph: { title: p.title, description, url: `/news-events/${p.slug}`, images: p.coverUrl ? [p.coverUrl] : undefined, type: "article", publishedTime: p.publishedAt?.toISOString(), modifiedTime: p.updatedAt.toISOString(), tags: tagList(p.tags) },
+  };
 }
 
 export default async function PostPage({ params }: Props) {
-  const post = await load((await params).slug);
-  if (!post) notFound();
-  await db.post.update({ where: { id: post.id }, data: { views: { increment: 1 } } });
-  const related = await db.post.findMany({ where: livePostWhere({ type: post.type, NOT: { id: post.id } }), orderBy: { publishedAt: "desc" }, take: 3 });
+  const data = await load((await params).slug);
+  if (!data) notFound();
+  const { post, related } = data;
   const label = POST_TYPES[post.type as keyof typeof POST_TYPES];
   const mins = Math.max(1, Math.round(post.body.split(/\s+/).length / 200));
 
+  const ld = jsonLd(
+    articleLd({ title: post.title, slug: post.slug, description: stripExcerpt(post.excerpt || post.body, 160), image: post.coverUrl, publishedAt: post.publishedAt, updatedAt: post.updatedAt, authorName: post.authorName, tags: tagList(post.tags) }),
+    breadcrumbLd([{ name: "Home", path: "/" }, { name: "News & Events", path: "/news-events" }, { name: post.title, path: `/news-events/${post.slug}` }]),
+  );
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: ld }} />
       <article>
         <div className="mx-auto flex max-w-[880px] flex-col gap-5 px-4 pb-20 pt-12 sm:px-8">
           <div className="surface overflow-clip rounded-[22px]">

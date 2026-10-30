@@ -15,10 +15,22 @@
       "database_name": "irw",
       "database_id": "7ed9b9b3-6bbe-480f-8c08-1a168309bde4",
       "remote": true
+    },
+    // Next.js tag cache (revalidateTag/updateTag); the deploy creates its "revalidations" table.
+    {
+      "binding": "NEXT_TAG_CACHE_D1",
+      "database_name": "irw",
+      "database_id": "7ed9b9b3-6bbe-480f-8c08-1a168309bde4"
     }
   ],
-  "r2_buckets": [{ "binding": "BUCKET", "bucket_name": "irw", "remote": true }],
+  "r2_buckets": [
+    { "binding": "BUCKET", "bucket_name": "irw", "remote": true },
+    // Next.js page and data cache (private bucket).
+    { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "irw-cache" }
+  ],
   "vars": {
+    // Canonical origin for metadata, sitemap, robots and llms.txt.
+    "SITE_URL": "https://irwkerala.org",
     "R2_PUBLIC_URL": "https://pub-81b7ea5b64524ab286bb2e9774f027ca.r2.dev"
   },
   "observability": { "enabled": true }

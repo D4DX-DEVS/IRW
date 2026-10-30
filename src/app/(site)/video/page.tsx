@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
 import { PageHero } from "@/components/site/parts";
 import { VideoGrid } from "@/components/site/VideoGrid";
+import { cached, TAG } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
 import { youtubeId } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Videos", description: "Field footage, safety trainings and recognition of IRW volunteers." };
+export const metadata: Metadata = { title: "Videos", description: "Field footage, safety trainings and recognition of IRW volunteers.", alternates: { canonical: "/video" } };
+
+export const revalidate = 3600;
+
+const getVideos = cached("videos", [TAG.videos], () => db.video.findMany({ orderBy: [{ featured: "desc" }, { sort: "asc" }, { createdAt: "desc" }] }));
 
 export default async function VideoPage() {
-  const [rows, s] = await Promise.all([db.video.findMany({ orderBy: [{ featured: "desc" }, { sort: "asc" }, { createdAt: "desc" }] }), getSettings()]);
+  const [rows, s] = await Promise.all([getVideos(), getSettings()]);
   const videos = rows.flatMap((v) => {
     const ytId = youtubeId(v.youtubeUrl);
     return ytId ? [{ id: v.id, title: v.title, description: v.description, ytId, featured: v.featured }] : [];

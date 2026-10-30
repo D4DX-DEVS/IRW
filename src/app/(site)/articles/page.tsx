@@ -2,20 +2,27 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { PageHero, Photo, SitePagination, stagger } from "@/components/site/parts";
+import { cached, TAG } from "@/lib/cache";
 import { db } from "@/lib/db";
 import { livePostWhere, stripExcerpt } from "@/lib/queries";
 import { fmtDate, pageParam } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Achievements", description: "Awards, honours and words of thanks received by IRW Kerala." };
+export const metadata: Metadata = { title: "Achievements", description: "Awards, honours and words of thanks received by IRW Kerala.", alternates: { canonical: "/articles" } };
 const PAGE_SIZE = 6;
 
-export default async function AchievementsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const sp = await searchParams;
+// One cache entry per page number; ?page makes the route dynamic, so the queries carry the cache.
+const getPage = cached("achievements", [TAG.posts], async (requested: number) => {
   const where = livePostWhere({ type: "ACHIEVEMENT" });
   const total = await db.post.count({ where });
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const page = Math.min(pageParam(sp.page), totalPages);
+  const page = Math.min(requested, totalPages);
   const posts = await db.post.findMany({ where, orderBy: [{ featured: "desc" }, { publishedAt: "desc" }], skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE });
+  return { page, total, totalPages, posts };
+}, 600);
+
+export default async function AchievementsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const sp = await searchParams;
+  const { page, total, totalPages, posts } = await getPage(pageParam(sp.page));
   const lead = page === 1 ? posts[0] : undefined;
   const rest = page === 1 ? posts.slice(1) : posts;
 

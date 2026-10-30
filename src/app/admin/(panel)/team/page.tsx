@@ -8,7 +8,7 @@ export const metadata = { title: "Team" };
 export default async function AdminTeamPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
   const g = strParam(sp.group);
-  const group = g in TEAM_GROUPS ? g : "GOVERNING";
+  const group = g in TEAM_GROUPS ? g : "LEADERS";
   const [members, grouped] = await Promise.all([
     db.teamMember.findMany({ where: { groupName: group }, orderBy: [{ sort: "asc" }, { createdAt: "asc" }] }),
     db.teamMember.groupBy({ by: ["groupName"], _count: true }),

@@ -1,8 +1,9 @@
 import "server-only";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import type { ZodError } from "zod";
 import { db } from "./db";
 import { requireSession, type Session } from "./auth";
+import type { CacheTag } from "./cache";
 import { UploadError } from "./storage";
 
 export type ActionResult<T = unknown> =
@@ -28,8 +29,10 @@ export async function logActivity(actor: string, verb: string, kind = "info") {
   await db.activity.create({ data: { actor, verb, kind } });
 }
 
-export function refreshSite() {
-  revalidatePath("/", "layout");
+/** Expires the public pages and cached reads built from these tags, and refreshes the admin views. */
+export function refreshSite(...tags: CacheTag[]) {
+  for (const t of tags) updateTag(t);
+  revalidatePath("/admin", "layout");
 }
 
 export function toFail(e: unknown): ActionResult<never> {

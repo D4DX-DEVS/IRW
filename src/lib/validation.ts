@@ -28,7 +28,7 @@ export type PostInput = z.input<typeof postSchema>;
 export const teamSchema = z.object({
   name: z.string().trim().min(2, "Enter a name").max(120),
   designation: z.string().trim().max(120).optional().default(""),
-  groupName: z.enum(["GOVERNING", "DISTRICT", "MEDICAL"]),
+  groupName: z.enum(["LEADERS", "GOVERNING", "DISTRICT", "MEDICAL"]),
   phone: z.string().trim().max(30).optional().default(""),
   visible: z.boolean().default(true),
 });
